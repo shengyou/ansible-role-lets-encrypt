@@ -1,0 +1,50 @@
+
+- name: check variables
+  fail:
+    msg: "{{ item }} is not defined"
+  when: "{{ item }} is not defined"
+  with_items:
+    - "{{ required_vars }}"
+
+- name: check variables (certbot_certs)
+  fail:
+    msg: "{{ item }} is not defined"
+  when: "{{ item }} is not defined"
+  with_items:
+    - "{{ cert_item_required_vars }}"
+
+- name: Set variable (CentOS apache = httpd).
+  set_fact:
+    web_service: "httpd"
+  when: ansible_distribution == "CentOS" and web_service == "apache"
+
+- name: Check if certificate already exists.
+  stat:
+    path: /etc/letsencrypt/live/{{ cert_item.domains | first }}/cert.pem
+  register: letsencrypt_cert
+
+- name: Stop services to allow certbot to generate a cert.
+  service:
+    name: "{{ web_service }}"
+    state: stopped
+  when: not letsencrypt_cert.stat.exists
+
+- name: Generate new certificate if one doesn't exist.
+  shell: "certbot certonly --standalone --noninteractive --agree-tos --email {{ cert_item.email }} -d {{ cert_item.domains | join(',') }}"
+  when: not letsencrypt_cert.stat.exists
+
+- name: Start services after cert has been generated.
+  service:
+    name: "{{ web_service }}"
+    state: started
+  when: not letsencrypt_cert.stat.exists
+
+- name: Add cron job for certbot renewal (if configured).
+  cron:
+    name: Certbot automatic renewal.
+    job: "certbot renew --quiet --no-self-upgrade"
+    hour: "4"
+    minute: "45"
+    user: "root"
+    cron_file: /etc/crontab
+  when: certbot_auto_renew

@@ -1,0 +1,13 @@
+---
+
+required_vars:
+  - web_service
+  - certbot_auto_renew
+
+cert_item_required_vars:
+  - cert_item.email
+  - cert_item.domains
+
+web_service: nginx
+
+certbot_auto_renew: true

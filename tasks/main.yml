@@ -1,0 +1,16 @@
+---
+
+
+
+- include_tasks: "{{ ansible_distribution }}-install.yml"
+  when: ansible_distribution == "Ubuntu" or ansible_distribution == "CentOS"
+  tags:
+    - install
+
+- include_tasks: setup.yml
+  with_items: "{{ certbot_certs }}"
+  when: certbot_certs is defined
+  loop_control:
+    loop_var: cert_item
+  tags:
+    - setup

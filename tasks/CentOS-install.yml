@@ -1,0 +1,45 @@
+# reference
+# https://certbot.eff.org/#centosrhel7-other
+# https://github.com/geerlingguy/ansible-role-certbot
+
+- name: install epel-release (CentOS)
+  yum:
+    name: epel-release
+    state: present
+    update_cache: yes
+
+- block:
+  - name: install git
+    yum:
+      name: git
+      state: present
+      update_cache: yes
+
+  - name: Git Clone Certbot Source.
+    git:
+      repo: https://github.com/certbot/certbot.git
+      dest: /opt/certbot
+      version: master
+      update: yes
+      force: yes
+
+  - name: Ensure certbot-auto is executable.
+    file:
+      path: "/opt/certbot/certbot-auto"
+      mode: 0755
+
+  - file:
+      src: /opt/certbot/certbot-auto
+      dest: /usr/bin/certbot
+      owner: root
+      group: root
+      state: link
+  when: ansible_distribution_major_version == "6"
+
+- block:
+  - name: install certbot
+    yum:
+      name: certbot
+      state: present
+      update_cache: yes
+  when: ansible_distribution_major_version == "7"
